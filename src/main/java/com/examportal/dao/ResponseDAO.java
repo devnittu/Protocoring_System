@@ -114,13 +114,15 @@ public class ResponseDAO implements IResponseDAO {
 
     private Response mapRow(ResultSet rs) throws SQLException {
         String chosen = rs.getString("chosen_option");
-        Object correct = rs.getObject("is_correct");
+        // MySQL 8 JDBC returns Boolean for BOOLEAN columns — use getBoolean+wasNull
+        boolean correctVal = rs.getBoolean("is_correct");
+        boolean correctNull = rs.wasNull();
         return new Response(
             rs.getLong("id"),
             rs.getLong("attempt_id"),
             rs.getLong("question_id"),
             chosen  != null ? chosen.charAt(0) : null,
-            correct != null ? ((Number) correct).intValue() == 1 : null,
+            correctNull ? null : correctVal,
             rs.getInt("time_spent_seconds")
         );
     }

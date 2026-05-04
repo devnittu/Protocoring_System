@@ -180,18 +180,19 @@ public class AttemptDAO implements IAttemptDAO {
     private Attempt mapRow(ResultSet rs) throws SQLException {
         Timestamp startedAt   = rs.getTimestamp("started_at");
         Timestamp submittedAt = rs.getTimestamp("submitted_at");
-        double score      = rs.getDouble("score");
-        double pct        = rs.getDouble("percentage");
-        Object passedObj  = rs.getObject("passed");
+        double score = rs.getDouble("score");   boolean scoreNull = rs.wasNull();
+        double pct   = rs.getDouble("percentage"); boolean pctNull = rs.wasNull();
+        // MySQL 8 JDBC returns Boolean for BOOLEAN columns — use getBoolean+wasNull
+        boolean passedVal = rs.getBoolean("passed"); boolean passedNull = rs.wasNull();
         return new Attempt(
             rs.getLong("id"),
             rs.getLong("student_id"),
             rs.getLong("exam_id"),
-            startedAt   != null ? startedAt.toLocalDateTime()   : LocalDateTime.now(),
-            submittedAt != null ? submittedAt.toLocalDateTime()  : null,
-            rs.wasNull() ? null : score,
-            rs.wasNull() ? null : pct,
-            passedObj   != null ? ((Number)passedObj).intValue() == 1 : null,
+            startedAt   != null ? startedAt.toLocalDateTime()  : LocalDateTime.now(),
+            submittedAt != null ? submittedAt.toLocalDateTime() : null,
+            scoreNull  ? null : score,
+            pctNull    ? null : pct,
+            passedNull ? null : passedVal,
             Attempt.Status.valueOf(rs.getString("status"))
         );
     }
