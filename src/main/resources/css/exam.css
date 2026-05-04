@@ -1,0 +1,258 @@
+/* ============================================================
+   exam.css — ExamView premium dark exam interface
+   ============================================================ */
+
+.exam-root {
+    -fx-background-color: #0F172A;
+}
+
+/* ── Top Bar ─────────────────────────────────────────────── */
+.exam-topbar {
+    -fx-background-color: #1E293B;
+    -fx-border-color: transparent transparent #1E3A5F transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-pref-height: 64;
+    -fx-min-height: 64;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0, 0, 2);
+}
+
+.exam-title {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F1F5F9;
+}
+
+.exam-timer {
+    -fx-font-size: 22;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F8FAFC;
+    -fx-background-color: rgba(37,99,235,0.25);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(59,130,246,0.4);
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 6 18;
+}
+
+.exam-timer-warning {
+    -fx-text-fill: #FCA5A5;
+    -fx-background-color: rgba(220,38,38,0.2);
+    -fx-border-color: rgba(220,38,38,0.5);
+}
+
+/* ── Question Sidebar ────────────────────────────────────── */
+.question-sidebar {
+    -fx-background-color: #1E293B;
+    -fx-border-color: transparent #1E3A5F transparent transparent;
+    -fx-border-width: 0 1 0 0;
+    -fx-min-width: 80;
+    -fx-pref-width: 80;
+}
+
+.sidebar-nav-label {
+    -fx-font-size: 10;
+    -fx-font-weight: bold;
+    -fx-text-fill: #475569;
+    -fx-padding: 12 0 6 0;
+    -fx-alignment: center;
+}
+
+.q-nav-btn {
+    -fx-background-color: #0F172A;
+    -fx-text-fill: #64748B;
+    -fx-font-weight: bold;
+    -fx-font-size: 13;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-max-width: 40;
+    -fx-max-height: 40;
+    -fx-background-radius: 50;
+    -fx-border-color: #1E3A5F;
+    -fx-border-radius: 50;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+}
+
+.q-nav-btn:hover {
+    -fx-background-color: rgba(59,130,246,0.15);
+    -fx-text-fill: #93C5FD;
+    -fx-border-color: #3B82F6;
+}
+
+.q-nav-active {
+    -fx-background-color: #2563EB;
+    -fx-text-fill: white;
+    -fx-border-color: #3B82F6;
+    -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.6), 8, 0, 0, 0);
+}
+
+.q-nav-answered {
+    -fx-background-color: rgba(22,163,74,0.3);
+    -fx-text-fill: #86EFAC;
+    -fx-border-color: #16A34A;
+}
+
+/* ── Question Panel ──────────────────────────────────────── */
+.question-panel {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #1E3A5F;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 12, 0, 0, 3);
+}
+
+.question-number-badge {
+    -fx-background-color: rgba(59,130,246,0.2);
+    -fx-text-fill: #93C5FD;
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+    -fx-padding: 4 12;
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(59,130,246,0.4);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+}
+
+.question-body {
+    -fx-font-size: 17;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F1F5F9;
+    -fx-line-spacing: 5;
+    -fx-wrap-text: true;
+}
+
+.question-meta {
+    -fx-font-size: 12;
+    -fx-text-fill: #475569;
+    -fx-font-weight: bold;
+}
+
+.difficulty-easy   { -fx-text-fill: #86EFAC; -fx-font-weight: bold; -fx-font-size: 12; }
+.difficulty-medium { -fx-text-fill: #FDE047; -fx-font-weight: bold; -fx-font-size: 12; }
+.difficulty-hard   { -fx-text-fill: #FCA5A5; -fx-font-weight: bold; -fx-font-size: 12; }
+
+/* ── Option Radio Buttons ────────────────────────────────── */
+.option-radio {
+    -fx-font-size: 14;
+    -fx-text-fill: #CBD5E1;
+    -fx-background-color: #0F172A;
+    -fx-background-radius: 10;
+    -fx-border-color: #1E3A5F;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 14 18;
+    -fx-cursor: hand;
+    -fx-wrap-text: true;
+}
+
+.option-radio:hover {
+    -fx-background-color: rgba(59,130,246,0.08);
+    -fx-border-color: #3B82F6;
+    -fx-text-fill: #E2E8F0;
+}
+
+.option-radio:selected {
+    -fx-background-color: rgba(59,130,246,0.18);
+    -fx-border-color: #3B82F6;
+    -fx-text-fill: #93C5FD;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.2), 8, 0, 0, 0);
+}
+
+/* ── Bottom Bar ──────────────────────────────────────────── */
+.exam-bottom-bar {
+    -fx-background-color: #1E293B;
+    -fx-border-color: #1E3A5F transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-pref-height: 68;
+    -fx-min-height: 68;
+}
+
+/* ── Webcam Box ──────────────────────────────────────────── */
+.webcam-box {
+    -fx-background-color: #0F172A;
+    -fx-background-radius: 10;
+    -fx-border-color: #1E3A5F;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+}
+
+.webcam-label {
+    -fx-font-size: 22;
+}
+
+.webcam-status-ok  { -fx-text-fill: #22C55E; -fx-font-size: 12; -fx-font-weight: bold; }
+.webcam-status-warn{ -fx-text-fill: #EAB308; -fx-font-size: 12; -fx-font-weight: bold; }
+.webcam-status-bad { -fx-text-fill: #EF4444; -fx-font-size: 12; -fx-font-weight: bold; }
+
+/* ── Proctor Status Chip ─────────────────────────────────── */
+.proctor-chip-ok {
+    -fx-background-color: rgba(22,163,74,0.15);
+    -fx-text-fill: #86EFAC;
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+    -fx-padding: 4 12;
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(22,163,74,0.3);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+}
+
+.proctor-chip-warn {
+    -fx-background-color: rgba(234,179,8,0.15);
+    -fx-text-fill: #FDE047;
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+    -fx-padding: 4 12;
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(234,179,8,0.3);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+}
+
+.proctor-chip-critical {
+    -fx-background-color: rgba(220,38,38,0.2);
+    -fx-text-fill: #FCA5A5;
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+    -fx-padding: 4 12;
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(220,38,38,0.4);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+}
+
+/* ── Progress bar ────────────────────────────────────────── */
+.exam-progress {
+    -fx-accent: #3B82F6;
+    -fx-background-color: #1E3A5F;
+    -fx-background-radius: 4;
+    -fx-pref-height: 4;
+}
+
+/* ── Submit confirm ──────────────────────────────────────── */
+.submit-btn-final {
+    -fx-background-color: linear-gradient(to right, #16A34A, #22C55E);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14;
+    -fx-padding: 12 28;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(22,163,74,0.4), 10, 0, 0, 3);
+}
+
+.submit-btn-final:hover {
+    -fx-effect: dropshadow(gaussian, rgba(22,163,74,0.6), 14, 0, 0, 4);
+}
+
+/* ── Proctor overlay ─────────────────────────────────────── */
+.proctor-overlay-panel {
+    -fx-background-color: #1E293B;
+    -fx-background-radius: 16;
+    -fx-border-color: #DC2626;
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(220,38,38,0.4), 30, 0, 0, 0);
+}

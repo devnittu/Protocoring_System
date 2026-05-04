@@ -1,0 +1,31 @@
+# Compiled output
+target/
+*.class
+*.jar
+*.war
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Proctor frames (potentially large / sensitive)
+proctor/
+
+# Sensitive config (keep config.properties in repo but not local overrides)
+config.local.properties

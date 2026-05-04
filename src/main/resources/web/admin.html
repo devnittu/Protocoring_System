@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Dashboard — ExamPortal</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+      <div class="topbar-brand"><span class="topbar-logo">EP</span><span class="topbar-title">ExamPortal</span></div>
+    </div>
+    <div class="sidebar-section">OVERVIEW</div>
+    <div class="sidebar-link active" data-panel="overview">📊 &nbsp;Dashboard</div>
+    <div class="sidebar-section">MANAGEMENT</div>
+    <div class="sidebar-link" data-panel="exams">📝 &nbsp;Exams</div>
+    <div class="sidebar-link" data-panel="students">👥 &nbsp;Students</div>
+    <div class="sidebar-link" data-panel="logs">📋 &nbsp;Activity Logs</div>
+    <div style="flex:1;"></div>
+    <div class="sidebar-section" style="border-top:1px solid var(--border);padding-top:16px;">ACCOUNT</div>
+    <div class="sidebar-link" onclick="logout()">🚪 &nbsp;Sign Out</div>
+  </nav>
+
+  <!-- Main -->
+  <div class="flex-col grow" style="overflow:hidden;">
+    <div class="topbar">
+      <div></div>
+      <div class="topbar-right">
+        <span class="badge badge-red">ADMIN</span>
+        <span class="topbar-user" id="user-name"></span>
+        <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+    <main class="content" id="main-content">
+      <div class="loading-center"><div class="spinner"></div></div>
+    </main>
+  </div>
+</div>
+
+<!-- Exam Modal -->
+<div class="modal-backdrop hidden" id="exam-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="exam-modal-title">Create Exam</span>
+      <button class="modal-close" onclick="closeExamModal()">✕</button>
+    </div>
+    <div class="form-grid" id="exam-form">
+      <div class="input-group form-full"><label class="input-label">Title</label><input id="ef-title" class="input" placeholder="Exam title"></div>
+      <div class="input-group form-full"><label class="input-label">Description</label><input id="ef-desc" class="input" placeholder="Short description"></div>
+      <div class="input-group"><label class="input-label">Duration (min)</label><input id="ef-dur" class="input" type="number" value="60"></div>
+      <div class="input-group"><label class="input-label">Total Marks</label><input id="ef-marks" class="input" type="number" value="100"></div>
+      <div class="input-group"><label class="input-label">Pass %</label><input id="ef-pass" class="input" type="number" value="50"></div>
+      <div class="input-group" style="align-self:end;"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input id="ef-pub" type="checkbox" style="width:16px;height:16px;accent-color:var(--primary)"> <span class="input-label" style="margin:0;">Published</span></label></div>
+    </div>
+    <div id="exam-modal-err" class="alert" style="margin-top:14px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeExamModal()">Cancel</button>
+      <button class="btn btn-primary" id="exam-modal-save" onclick="saveExam()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireAuth('ADMIN');
+if (user) document.getElementById('user-name').textContent = '👤 ' + user.fullName;
+
+document.querySelectorAll('.sidebar-link[data-panel]').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    el.classList.add('active');
+    loadPanel(el.dataset.panel);
+  });
+});
+loadPanel('overview');
+
+async function loadPanel(name) {
+  const el = document.getElementById('main-content');
+  el.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  if (name === 'overview') await loadOverview();
+  else if (name === 'exams') await loadExams();
+  else if (name === 'students') await loadStudents();
+  else if (name === 'logs') await loadLogs();
+}
+
+// ── Overview ─────────────────────────────────────────────────
+async function loadOverview() {
+  const stats = await api.admin.stats();
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in">
+      <div class="content-header"><h2>Dashboard Overview</h2><p class="text-muted">Real-time system statistics</p></div>
+      <div class="stat-grid">
+        <div class="card stat-card"><div class="stat-icon">📝</div><div class="stat-value" style="color:#3B82F6">${stats.totalExams}</div><div class="stat-label">Total Exams</div></div>
+        <div class="card stat-card"><div class="stat-icon">👥</div><div class="stat-value" style="color:#22C55E">${stats.totalStudents}</div><div class="stat-label">Students</div></div>
+        <div class="card stat-card"><div class="stat-icon">📋</div><div class="stat-value" style="color:#A78BFA">${stats.attemptsToday}</div><div class="stat-label">Attempts Today</div></div>
+        <div class="card stat-card"><div class="stat-icon">🚨</div><div class="stat-value" style="color:#EF4444">${stats.flaggedSessions}</div><div class="stat-label">Flagged Sessions</div></div>
+      </div>
+    </div>`;
+}
+
+// ── Exams ─────────────────────────────────────────────────────
+let editingExamId = null;
+async function loadExams() {
+  const exams = await api.admin.exams();
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in">
+      <div class="content-header flex justify-between items-center">
+        <div><h2>Exam Management</h2><p class="text-muted">Create, edit and publish exams</p></div>
+        <button class="btn btn-primary" onclick="openExamModal()">+ New Exam</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Title</th><th>Duration</th><th>Marks</th><th>Pass%</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${exams.map(e => `<tr>
+            <td>${e.id}</td><td>${e.title}</td><td>${e.durationMinutes} min</td>
+            <td>${e.totalMarks}</td><td>${e.passPercentage}%</td>
+            <td><span class="badge ${e.published?'badge-green':'badge-yellow'}">${e.published?'Published':'Draft'}</span></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openExamModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteExam(${e.id})">Delete</button></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function openExamModal(exam) {
+  editingExamId = exam ? exam.id : null;
+  document.getElementById('exam-modal-title').textContent = exam ? 'Edit Exam' : 'Create Exam';
+  document.getElementById('ef-title').value = exam?.title || '';
+  document.getElementById('ef-desc').value  = exam?.description || '';
+  document.getElementById('ef-dur').value   = exam?.durationMinutes || 60;
+  document.getElementById('ef-marks').value = exam?.totalMarks || 100;
+  document.getElementById('ef-pass').value  = exam?.passPercentage || 50;
+  document.getElementById('ef-pub').checked = exam?.published || false;
+  document.getElementById('exam-modal-err').className = 'alert';
+  document.getElementById('exam-modal').classList.remove('hidden');
+}
+function closeExamModal() { document.getElementById('exam-modal').classList.add('hidden'); editingExamId = null; }
+
+async function saveExam() {
+  const data = {
+    title: document.getElementById('ef-title').value,
+    description: document.getElementById('ef-desc').value,
+    durationMinutes: +document.getElementById('ef-dur').value,
+    totalMarks: +document.getElementById('ef-marks').value,
+    passPercentage: +document.getElementById('ef-pass').value,
+    isPublished: document.getElementById('ef-pub').checked,
+  };
+  const errEl = document.getElementById('exam-modal-err');
+  try {
+    if (editingExamId) await api.admin.updateExam(editingExamId, data);
+    else await api.admin.createExam(data);
+    closeExamModal();
+    loadExams();
+  } catch(e) {
+    errEl.className = 'alert alert-error'; errEl.textContent = e.message;
+  }
+}
+
+async function deleteExam(id) {
+  if (!confirm('Delete this exam? This cannot be undone.')) return;
+  await api.admin.deleteExam(id);
+  loadExams();
+}
+
+// ── Students ──────────────────────────────────────────────────
+async function loadStudents() {
+  const students = await api.admin.students();
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in">
+      <div class="content-header"><h2>Student Management</h2><p class="text-muted">${students.length} registered students</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${students.map(s => `<tr>
+            <td>${s.id}</td><td>${s.fullName}</td><td>${s.email}</td>
+            <td><span class="badge ${s.active?'badge-green':'badge-red'}">${s.active?'Active':'Suspended'}</span></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="toggleStudent(${s.id})">${s.active?'Suspend':'Activate'}</button></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function toggleStudent(id) {
+  await api.admin.toggleStudent(id);
+  loadStudents();
+}
+
+// ── Logs ──────────────────────────────────────────────────────
+async function loadLogs() {
+  const logs = await api.admin.logs();
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in">
+      <div class="content-header"><h2>Activity Logs</h2><p class="text-muted">Proctoring events and violations</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Time</th><th>Attempt</th><th>Event</th><th>Detail</th><th>Severity</th></tr></thead>
+          <tbody>${logs.length ? logs.slice(0,200).map(l => `<tr>
+            <td>${fmtDate(l.createdAt)}</td>
+            <td>${l.attemptId}</td>
+            <td>${l.eventType}</td>
+            <td>${l.detail||'—'}</td>
+            <td><span class="badge ${l.severity==='CRITICAL'?'badge-red':l.severity==='WARNING'?'badge-yellow':'badge-blue'}">${l.severity}</span></td>
+          </tr>`).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px;">No logs yet.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>

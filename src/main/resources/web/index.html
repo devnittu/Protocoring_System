@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ExamPortal — Secure Online Examination</title>
+<meta name="description" content="ExamPortal: AI-proctored online exam system with live monitoring and instant results.">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  body { overflow: hidden; }
+</style>
+</head>
+<body>
+<div class="login-layout">
+
+  <!-- LEFT HERO -->
+  <div class="login-hero">
+    <div class="login-hero-content fade-in">
+      <div class="hero-logo">🎓</div>
+      <h1 class="hero-title">Exam<span style="color:#93C5FD">Portal</span></h1>
+      <p class="hero-sub">The most secure platform for conducting online examinations — with real-time AI proctoring and instant analytics.</p>
+      <div class="hero-features">
+        <div class="hero-feature"><div class="hero-feature-icon">🔒</div>BCrypt-secured accounts & sessions</div>
+        <div class="hero-feature"><div class="hero-feature-icon">📷</div>Live webcam face-detection proctoring</div>
+        <div class="hero-feature"><div class="hero-feature-icon">⏱</div>Countdown timer with auto-submission</div>
+        <div class="hero-feature"><div class="hero-feature-icon">📊</div>Instant scored results & CSV export</div>
+        <div class="hero-feature"><div class="hero-feature-icon">🛡</div>Tab-switch & inactivity monitoring</div>
+      </div>
+      <p class="hero-version">v1.0 · Java 21 · MySQL 8 · REST API</p>
+    </div>
+  </div>
+
+  <!-- RIGHT FORM -->
+  <div class="login-form-side">
+    <div class="login-form-box fade-in">
+      <div class="login-brand">
+        <span class="login-ep-badge">EP</span>
+        <span class="login-site-name">ExamPortal</span>
+      </div>
+
+      <div id="login-view">
+        <h2 class="login-heading">Sign in</h2>
+        <p class="login-subheading">Enter your credentials to continue</p>
+
+        <div id="login-err" class="alert" style="margin-bottom:14px;"></div>
+
+        <form class="login-form" id="login-form" autocomplete="off">
+          <div class="input-group">
+            <label class="input-label">Email Address</label>
+            <input id="email" class="input" type="email" placeholder="admin@exam.local" required autocomplete="username">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Password</label>
+            <div class="pw-wrap">
+              <input id="password" class="input" type="password" placeholder="Enter password" required autocomplete="current-password">
+              <button type="button" class="pw-toggle" id="pw-toggle">Show</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
+            Sign In →
+          </button>
+        </form>
+
+        <div class="divider" style="margin-top:20px;">or</div>
+
+        <div class="login-footer">
+          New student? <a href="#" id="show-register">Create an account</a>
+        </div>
+      </div>
+
+      <!-- REGISTER VIEW -->
+      <div id="register-view" style="display:none;">
+        <h2 class="login-heading">Create Account</h2>
+        <p class="login-subheading">Student registration</p>
+
+        <div id="reg-err" class="alert" style="margin-bottom:14px;"></div>
+        <div id="reg-ok"  class="alert alert-success" style="margin-bottom:14px;display:none;"></div>
+
+        <form class="login-form" id="register-form">
+          <div class="input-group">
+            <label class="input-label">Full Name</label>
+            <input id="reg-name" class="input" type="text" placeholder="Your full name" required>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Email Address</label>
+            <input id="reg-email" class="input" type="email" placeholder="student@exam.local" required>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Password</label>
+            <input id="reg-password" class="input" type="password" placeholder="Min 8 chars · 1 uppercase · 1 digit">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+        </form>
+
+        <div class="login-footer" style="margin-top:16px;">
+          Already have an account? <a href="#" id="show-login">Sign in</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+// Redirect if already logged in
+if (getToken() && getUser()) {
+  const u = getUser();
+  window.location.href = u.role === 'ADMIN' ? '/admin' : '/student';
+}
+
+// Show/hide password
+document.getElementById('pw-toggle').addEventListener('click', () => {
+  const pw = document.getElementById('password');
+  const btn = document.getElementById('pw-toggle');
+  if (pw.type === 'password') { pw.type = 'text'; btn.textContent = 'Hide'; }
+  else { pw.type = 'password'; btn.textContent = 'Show'; }
+});
+
+// Toggle views
+document.getElementById('show-register').addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('register-view').style.display = '';
+});
+document.getElementById('show-login').addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('register-view').style.display = 'none';
+  document.getElementById('login-view').style.display = '';
+});
+
+// Login
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-err');
+  err.className = 'alert'; err.textContent = '';
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const data = await api.auth.login(
+      document.getElementById('email').value.trim(),
+      document.getElementById('password').value
+    );
+    setToken(data.token); setUser(data.user);
+    window.location.href = data.user.role === 'ADMIN' ? '/admin' : '/student';
+  } catch (ex) {
+    err.className = 'alert alert-error'; err.textContent = '⚠  ' + ex.message;
+  } finally { btn.disabled = false; btn.textContent = 'Sign In →'; }
+});
+
+// Register
+document.getElementById('register-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = document.getElementById('reg-err');
+  const ok  = document.getElementById('reg-ok');
+  err.className = 'alert'; err.textContent = '';
+  ok.style.display = 'none';
+  try {
+    await apiFetch('/auth/register', { method: 'POST', body: JSON.stringify({
+      fullName: document.getElementById('reg-name').value,
+      email:    document.getElementById('reg-email').value,
+      password: document.getElementById('reg-password').value,
+    })});
+    ok.style.display = 'block'; ok.textContent = '✅  Account created! Please sign in.';
+    setTimeout(() => { document.getElementById('show-login').click(); }, 1500);
+  } catch (ex) {
+    err.className = 'alert alert-error'; err.textContent = '⚠  ' + ex.message;
+  }
+});
+</script>
+</body>
+</html>

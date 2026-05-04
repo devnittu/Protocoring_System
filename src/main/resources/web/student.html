@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Student Dashboard — ExamPortal</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+      <div class="topbar-brand">
+        <span class="topbar-logo">EP</span>
+        <span class="topbar-title">ExamPortal</span>
+      </div>
+    </div>
+    <div class="sidebar-section">NAVIGATION</div>
+    <div class="sidebar-link active" data-panel="exams">📝 &nbsp;Available Exams</div>
+    <div class="sidebar-link" data-panel="history">📊 &nbsp;My Results</div>
+    <div style="flex:1;"></div>
+    <div class="sidebar-section" style="border-top:1px solid var(--border);padding-top:16px;">ACCOUNT</div>
+    <div class="sidebar-link" id="logout-link">🚪 &nbsp;Sign Out</div>
+  </nav>
+
+  <!-- Main -->
+  <div class="flex-col grow" style="overflow:hidden;">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div></div>
+      <div class="topbar-right">
+        <span class="badge badge-blue">STUDENT</span>
+        <span class="topbar-user" id="user-name">Loading…</span>
+        <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <main class="content" id="main-content">
+      <div class="loading-center"><div class="spinner"></div><span>Loading…</span></div>
+    </main>
+  </div>
+</div>
+
+<!-- Templates -->
+<template id="tpl-exams">
+  <div class="fade-in">
+    <div class="content-header">
+      <div style="font-size:1.8rem;margin-bottom:4px;">👋 Welcome back, <span id="greet-name"></span>!</div>
+      <p class="text-muted">Choose an exam below to begin. Good luck!</p>
+    </div>
+
+    <!-- Stat strip -->
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px;" id="stat-strip">
+      <div class="card stat-card"><div class="stat-icon">📋</div><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Attempts</div></div>
+      <div class="card stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="stat-pass" style="color:var(--success)">—</div><div class="stat-label">Passed</div></div>
+      <div class="card stat-card"><div class="stat-icon">📝</div><div class="stat-value" id="stat-avail" style="color:var(--purple)">—</div><div class="stat-label">Available Exams</div></div>
+    </div>
+
+    <h3 style="margin-bottom:16px;color:var(--muted);">📝  Available Exams</h3>
+    <div class="exam-grid" id="exam-grid"></div>
+  </div>
+</template>
+
+<template id="tpl-exam-card">
+  <div class="card exam-card fade-in">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span class="badge badge-green">● Available</span>
+      <span class="badge badge-blue exam-duration"></span>
+    </div>
+    <h3 class="exam-title"></h3>
+    <div class="exam-card-meta">
+      <span class="pill exam-marks"></span>
+      <span class="pill exam-pass"></span>
+    </div>
+    <p class="text-muted exam-date" style="font-size:0.8rem;"></p>
+    <div class="spacer"></div>
+    <button class="btn btn-primary btn-block exam-start-btn">Start Exam →</button>
+  </div>
+</template>
+
+<template id="tpl-history">
+  <div class="fade-in">
+    <div class="content-header">
+      <h2>My Exam Results</h2>
+      <p class="text-muted">Your complete attempt history</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Exam</th><th>Date</th><th>Score</th><th>Percentage</th><th>Result</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireAuth('STUDENT');
+if (user) {
+  document.getElementById('user-name').textContent = '👤 ' + user.fullName;
+
+  // Sidebar navigation
+  document.querySelectorAll('.sidebar-link[data-panel]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      el.classList.add('active');
+      loadPanel(el.dataset.panel);
+    });
+  });
+  document.getElementById('logout-link').addEventListener('click', logout);
+
+  loadPanel('exams');
+}
+
+async function loadPanel(name) {
+  const content = document.getElementById('main-content');
+  content.innerHTML = '<div class="loading-center"><div class="spinner"></div><span>Loading…</span></div>';
+
+  if (name === 'exams') await loadExams();
+  else if (name === 'history') await loadHistory();
+}
+
+async function loadExams() {
+  const [exams, historyAttempts] = await Promise.all([api.exams.list(), loadAttempts()]);
+  const tpl = document.getElementById('tpl-exams').content.cloneNode(true);
+  document.getElementById('main-content').replaceChildren(tpl);
+
+  document.getElementById('greet-name').textContent = user.fullName.split(' ')[0];
+  document.getElementById('stat-total').textContent = historyAttempts.length;
+  document.getElementById('stat-pass').textContent  = historyAttempts.filter(a => a.passed).length;
+  document.getElementById('stat-avail').textContent = exams.length;
+
+  const grid = document.getElementById('exam-grid');
+  if (!exams.length) {
+    grid.innerHTML = '<p class="text-muted" style="padding:40px;">No exams are currently available. Check back later.</p>';
+    return;
+  }
+  exams.forEach(exam => {
+    const tpl = document.getElementById('tpl-exam-card').content.cloneNode(true);
+    tpl.querySelector('.exam-title').textContent    = exam.title;
+    tpl.querySelector('.exam-duration').textContent = '⏱ ' + exam.durationMinutes + ' min';
+    tpl.querySelector('.exam-marks').textContent    = '📊 ' + exam.totalMarks + ' marks';
+    tpl.querySelector('.exam-pass').textContent     = '✅ ' + exam.passPercentage + '% to pass';
+    tpl.querySelector('.exam-date').textContent     = '📅 ' + fmtDate(exam.startTime);
+    tpl.querySelector('.exam-start-btn').addEventListener('click', () => startExam(exam));
+    grid.appendChild(tpl);
+  });
+}
+
+async function loadAttempts() {
+  // Return empty if API not yet supporting per-student history from this endpoint
+  try {
+    const exams = await api.exams.list();
+    return []; // attempts come from result page; this is just for stats placeholder
+  } catch { return []; }
+}
+
+async function loadHistory() {
+  const tpl = document.getElementById('tpl-history').content.cloneNode(true);
+  document.getElementById('main-content').replaceChildren(tpl);
+  const tbody = document.getElementById('history-body');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px;">No attempts recorded yet.</td></tr>';
+}
+
+function startExam(exam) {
+  sessionStorage.setItem('ep_exam', JSON.stringify(exam));
+  window.location.href = '/exam';
+}
+</script>
+</body>
+</html>

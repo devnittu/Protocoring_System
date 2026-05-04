@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Result — ExamPortal</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="min-height:100vh;">
+<div class="topbar">
+  <div class="topbar-brand"><span class="topbar-logo">EP</span><span class="topbar-title">ExamPortal</span></div>
+  <div class="topbar-right">
+    <button class="btn btn-ghost btn-sm" onclick="window.location.href='/student'">← Dashboard</button>
+    <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+<div style="max-width:900px;margin:0 auto;padding:40px 24px;" id="result-content">
+  <div class="loading-center"><div class="spinner"></div><span>Loading result…</span></div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+const user = requireAuth('STUDENT');
+if (!user) throw new Error('Not authenticated');
+const attemptId = sessionStorage.getItem('ep_attempt_id');
+if (!attemptId) { window.location.href = '/student'; }
+(async () => {
+  try {
+    const data = await api.attempts.result(attemptId);
+    renderResult(data);
+  } catch (e) {
+    document.getElementById('result-content').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+})();
+function renderResult({ attempt, exam, questions, responses }) {
+  const pct = attempt.percentage ?? 0;
+  const passed = attempt.passed ?? false;
+  const score = attempt.score ?? 0;
+  const respMap = {};
+  responses.forEach(r => respMap[r.questionId] = r);
+  const correct = responses.filter(r => r.isCorrect).length;
+  const wrong = responses.filter(r => r.selectedOption && !r.isCorrect).length;
+  const skipped = questions.length - correct - wrong;
+  const color = passed ? '#22C55E' : '#EF4444';
+  const r = 54, circ = 2 * Math.PI * r, fill = (pct / 100) * circ;
+  document.getElementById('result-content').innerHTML = `
+    <div class="fade-in">
+      <div class="result-hero">
+        <div class="score-ring">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--border)" stroke-width="10"/>
+            <circle cx="70" cy="70" r="${r}" fill="none" stroke="${color}" stroke-width="10"
+              stroke-dasharray="${fill} ${circ}" stroke-linecap="round" style="transition:stroke-dasharray 1s ease;"/>
+          </svg>
+          <div class="score-text">
+            <span class="score-pct" style="color:${color}">${pct.toFixed(1)}%</span>
+            <span class="score-label">SCORE</span>
+          </div>
+        </div>
+        <div class="result-meta">
+          <div class="result-verdict ${passed?'pass':'fail'}">${passed?'🎉 PASSED':'❌ FAILED'}</div>
+          <div style="color:var(--text-2);margin-bottom:12px;">${exam.title}</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;">
+            <div><div style="font-size:1.5rem;font-weight:800;">${score}/${exam.totalMarks}</div><div class="text-muted" style="font-size:0.75rem;">Raw Score</div></div>
+            <div><div style="font-size:1.5rem;font-weight:800;color:var(--success)">${correct}</div><div class="text-muted" style="font-size:0.75rem;">Correct</div></div>
+            <div><div style="font-size:1.5rem;font-weight:800;color:var(--danger)">${wrong}</div><div class="text-muted" style="font-size:0.75rem;">Wrong</div></div>
+            <div><div style="font-size:1.5rem;font-weight:800;color:var(--muted)">${skipped}</div><div class="text-muted" style="font-size:0.75rem;">Skipped</div></div>
+          </div>
+          <div style="margin-top:10px;font-size:0.8rem;color:var(--muted);">📅 ${fmtDate(attempt.submittedAt)}</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:24px;padding:14px 20px;display:flex;align-items:center;gap:12px;">
+        <span>Pass threshold: <strong>${exam.passPercentage}%</strong></span>
+        <span class="badge ${passed?'badge-green':'badge-red'}">${passed?'Above threshold':'Below threshold'}</span>
+        <div style="flex:1;"></div>
+        <button class="btn btn-ghost btn-sm" onclick="window.location.href='/student'">← Back</button>
+      </div>
+      <h3 style="margin-bottom:14px;">📋 Question Breakdown</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Question</th><th>Your Answer</th><th>Correct</th><th>Marks</th><th>Result</th></tr></thead>
+          <tbody>
+            ${questions.map((q, i) => {
+              const resp = respMap[q.id] || {};
+              const sel = resp.selectedOption || '—';
+              const ok = resp.isCorrect;
+              return `<tr>
+                <td>${i+1}</td>
+                <td style="max-width:280px;">${q.questionText.substring(0,75)}${q.questionText.length>75?'…':''}</td>
+                <td><span class="badge ${ok?'badge-green':sel==='—'?'badge-blue':'badge-red'}">${sel}</span></td>
+                <td><span class="badge badge-green">${q.correctOption}</span></td>
+                <td>${ok?q.marks:0}/${q.marks}</td>
+                <td>${ok?'✅':sel==='—'?'⏭':'❌'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>
