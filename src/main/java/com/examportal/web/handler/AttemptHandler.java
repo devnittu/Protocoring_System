@@ -72,7 +72,11 @@ public class AttemptHandler implements HttpHandler {
         Map<?,?> body   = JsonUtil.fromJson(ApiServer.body(ex), Map.class);
         Object rawId    = body.get("examId");
         if (rawId == null) { ApiServer.error(ex, 400, "examId required"); return; }
-        Long examId = ((Number) rawId).longValue();
+        // Gson deserialises JSON numbers as Double by default
+        Long examId;
+        if (rawId instanceof Number n)  examId = n.longValue();
+        else if (rawId instanceof String s) examId = Long.parseLong(s);
+        else { ApiServer.error(ex, 400, "examId must be a number, got " + rawId.getClass().getSimpleName()); return; }
         Attempt attempt = examService.startAttempt(user.id(), examId);
         ApiServer.ok(ex, attempt);
     }
@@ -94,9 +98,9 @@ public class AttemptHandler implements HttpHandler {
                 answers.put(Long.parseLong(k), v.charAt(0));
         });
 
-        // Load attempt + exam + questions
+        // Use Long.equals() — not == — to avoid boxed-Long cache miss for IDs > 127
         Attempt attempt = resultService.getAttemptsByStudent(user.id()).stream()
-            .filter(a -> a.id() == attemptId)
+            .filter(a -> a.id() != null && a.id().equals(attemptId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Attempt not found: " + attemptId));
 
@@ -113,7 +117,7 @@ public class AttemptHandler implements HttpHandler {
     // ── Result ────────────────────────────────────────────────────────────────
     private void handleResult(HttpExchange ex, User user, long attemptId) throws IOException {
         Attempt attempt = resultService.getAttemptsByStudent(user.id()).stream()
-            .filter(a -> a.id() == attemptId)
+            .filter(a -> a.id() != null && a.id().equals(attemptId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Attempt not found: " + attemptId));
 
