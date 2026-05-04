@@ -37,6 +37,11 @@ public class AttemptHandler implements HttpHandler {
         String method = ex.getRequestMethod().toUpperCase();
 
         try {
+            // GET /api/attempts/my
+            if (path.endsWith("/my") && "GET".equals(method)) {
+                handleHistory(ex, user);
+                return;
+            }
             // POST /api/attempts/start
             if (path.endsWith("/start") && "POST".equals(method)) {
                 handleStart(ex, user);
@@ -65,6 +70,28 @@ public class AttemptHandler implements HttpHandler {
             e.printStackTrace();
             ApiServer.error(ex, 500, e.getMessage() != null ? e.getMessage() : "Internal error");
         }
+    }
+
+    // ── History ───────────────────────────────────────────────────────────────
+    private void handleHistory(HttpExchange ex, User user) throws IOException {
+        List<Attempt> attempts = resultService.getAttemptsByStudent(user.id());
+        // Enrich each attempt with exam title
+        List<Map<String, Object>> dtos = attempts.stream().map(a -> {
+            String examTitle = examService.findExamById(a.examId())
+                .map(e -> e.title()).orElse("Unknown Exam");
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id",          a.id());
+            m.put("examId",      a.examId());
+            m.put("examTitle",   examTitle);
+            m.put("startedAt",   a.startedAt());
+            m.put("submittedAt", a.submittedAt());
+            m.put("score",       a.score());
+            m.put("percentage",  a.percentage());
+            m.put("passed",      a.passed());
+            m.put("status",      a.status().name());
+            return m;
+        }).toList();
+        ApiServer.ok(ex, dtos);
     }
 
     // ── Start ─────────────────────────────────────────────────────────────────

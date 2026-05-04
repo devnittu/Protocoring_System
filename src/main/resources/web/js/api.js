@@ -37,9 +37,10 @@ const api = {
     questions: (id) => apiFetch(`/exams/${id}/questions`),
   },
   attempts: {
-    start:  (examId)           => apiFetch('/attempts/start',          { method: 'POST', body: JSON.stringify({ examId }) }),
-    submit: (attemptId, answers, force) => apiFetch(`/attempts/${attemptId}/submit`, { method: 'POST', body: JSON.stringify({ answers, force: !!force }) }),
-    result: (attemptId)        => apiFetch(`/attempts/${attemptId}/result`),
+    history: ()                    => apiFetch('/attempts/my'),
+    start:   (examId)              => apiFetch('/attempts/start',          { method: 'POST', body: JSON.stringify({ examId }) }),
+    submit:  (attemptId, answers, force) => apiFetch(`/attempts/${attemptId}/submit`, { method: 'POST', body: JSON.stringify({ answers, force: !!force }) }),
+    result:  (attemptId)           => apiFetch(`/attempts/${attemptId}/result`),
   },
   admin: {
     stats:          ()          => apiFetch('/admin/stats'),

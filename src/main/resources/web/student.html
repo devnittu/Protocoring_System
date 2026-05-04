@@ -152,18 +152,52 @@ async function loadExams() {
 }
 
 async function loadAttempts() {
-  // Return empty if API not yet supporting per-student history from this endpoint
-  try {
-    const exams = await api.exams.list();
-    return []; // attempts come from result page; this is just for stats placeholder
-  } catch { return []; }
+  try { return await api.attempts.history(); }
+  catch { return []; }
 }
 
 async function loadHistory() {
   const tpl = document.getElementById('tpl-history').content.cloneNode(true);
   document.getElementById('main-content').replaceChildren(tpl);
   const tbody = document.getElementById('history-body');
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px;">No attempts recorded yet.</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;"><div class="spinner" style="margin:0 auto 10px"></div>Loading…</td></tr>';
+  try {
+    const attempts = await api.attempts.history();
+    if (!attempts.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px;">No attempts recorded yet. Take an exam to see your history!</td></tr>';
+      return;
+    }
+    tbody.innerHTML = attempts.map(a => {
+      const pct    = a.percentage != null ? a.percentage.toFixed(1) + '%' : '—';
+      const score  = a.score      != null ? a.score : '—';
+      const passed = a.passed;
+      const status = a.status;
+      const done   = status === 'SUBMITTED' || status === 'FORCE_SUBMITTED';
+      const badge  = passed === true  ? '<span class="badge badge-green">✅ PASSED</span>'
+                   : passed === false ? '<span class="badge badge-red">❌ FAILED</span>'
+                   : status === 'IN_PROGRESS' ? '<span class="badge badge-blue">⏳ In Progress</span>'
+                   : '<span class="badge">—</span>';
+      const viewBtn = done
+        ? `<button class="btn btn-ghost btn-sm" onclick="viewResult(${a.id})">View →</button>`
+        : '<span style="color:var(--muted);font-size:12px">—</span>';
+      return `<tr>
+        <td style="font-weight:600">${a.examTitle}</td>
+        <td>${fmtDate(a.startedAt)}</td>
+        <td>${score}</td>
+        <td style="font-weight:700;color:${a.passed===true?'var(--success)':a.passed===false?'var(--danger)':'var(--muted)'}">${pct}</td>
+        <td>${badge}</td>
+        <td><span class="badge">${status.replace('_',' ')}</span></td>
+        <td>${viewBtn}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger);padding:24px;">Error loading history: ${e.message}</td></tr>`;
+  }
+}
+
+function viewResult(attemptId) {
+  sessionStorage.setItem('ep_attempt_id', String(attemptId));
+  window.location.href = '/result';
 }
 
 function startExam(exam) {

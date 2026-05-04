@@ -94,7 +94,65 @@ function renderResult({ attempt, exam, questions, responses }) {
           </tbody>
         </table>
       </div>
+
+      <!-- Attempt History -->
+      <h3 style="margin:28px 0 14px;">🕐 Attempt History</h3>
+      <div class="table-wrap" id="history-wrap">
+        <div class="loading-center"><div class="spinner"></div><span>Loading history…</span></div>
+      </div>
     </div>`;
+
+  // Load full attempt history after rendering
+  loadAttemptHistory();
+}
+
+async function loadAttemptHistory() {
+  const wrap = document.getElementById('history-wrap');
+  if (!wrap) return;
+  try {
+    const attempts = await api.attempts.history();
+    if (!attempts.length) {
+      wrap.innerHTML = '<p style="color:var(--muted);padding:20px;">No attempt history found.</p>';
+      return;
+    }
+    wrap.innerHTML = `<table>
+      <thead><tr>
+        <th>Exam</th><th>Started</th><th>Submitted</th>
+        <th>Score</th><th>Percentage</th><th>Result</th><th>Status</th><th></th>
+      </tr></thead>
+      <tbody>${attempts.map(a => {
+        const pct   = a.percentage != null ? a.percentage.toFixed(1)+'%' : '—';
+        const score = a.score != null ? a.score : '—';
+        const done  = a.status === 'SUBMITTED' || a.status === 'FORCE_SUBMITTED';
+        const badge = a.passed === true  ? '<span class="badge badge-green">✅ PASSED</span>'
+                    : a.passed === false ? '<span class="badge badge-red">❌ FAILED</span>'
+                    : a.status === 'IN_PROGRESS' ? '<span class="badge badge-blue">⏳ In Progress</span>'
+                    : '<span class="badge">—</span>';
+        const isCurrent = String(a.id) === String(sessionStorage.getItem('ep_attempt_id'));
+        const viewBtn = done
+          ? `<button class="btn btn-ghost btn-sm" onclick="viewAttempt(${a.id})">${isCurrent ? '← Current' : 'View →'}</button>`
+          : '—';
+        return `<tr style="${isCurrent?'background:rgba(59,130,246,.08);border-left:3px solid #3B82F6;':''}">
+          <td style="font-weight:600">${a.examTitle}</td>
+          <td>${fmtDate(a.startedAt)}</td>
+          <td>${a.submittedAt ? fmtDate(a.submittedAt) : '—'}</td>
+          <td>${score}</td>
+          <td style="font-weight:700;color:${a.passed===true?'var(--success)':a.passed===false?'var(--danger)':'var(--muted)'}">${pct}</td>
+          <td>${badge}</td>
+          <td><span class="badge">${(a.status||'').replace('_',' ')}</span></td>
+          <td>${viewBtn}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  } catch(e) {
+    wrap.innerHTML = `<p style="color:var(--danger);padding:20px;">Could not load history: ${e.message}</p>`;
+  }
+}
+
+function viewAttempt(attemptId) {
+  sessionStorage.setItem('ep_attempt_id', String(attemptId));
+  window.location.reload();
+
 }
 </script>
 </body>
