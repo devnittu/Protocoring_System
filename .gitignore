@@ -25,7 +25,7 @@ Thumbs.db
 logs/
 
 # Proctor frames (potentially large / sensitive)
-proctor/
+/proctor/
 
 # Sensitive config (keep config.properties in repo but not local overrides)
 config.local.properties
